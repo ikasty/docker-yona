@@ -1,42 +1,26 @@
-FROM debian:jessie
+FROM openjdk:8-jdk-alpine
+MAINTAINER ikasty <mail.ikasty@gmail.com>
 
-LABEL Description="This image is used to start the yona" maintainer="pokev25"
+LABEL Description="This image is used to start the yona" maintainer="ikasty"
 
-ARG YONA_VERSION=1.8.1
-ARG YONA_DOWNLOAD_URL=https://github.com/yona-projects/yona/releases/download/v${YONA_VERSION}/yona-v${YONA_VERSION}-bin.zip
+ARG YONA_VERSION=1.9.0
+ARG YONA_DOWNLOAD_URL=https://github.com/yona-projects/yona/releases/download/v${YONA_VERSION}/yona-h2-v${YONA_VERSION}-bin.zip
 
 ENV DEBIAN_FRONTEND noninteractive
 
-## install Oracle Java 8 and clean up installation files
-RUN \
-  echo "deb http://ppa.launchpad.net/webupd8team/java/ubuntu xenial main" | tee /etc/apt/sources.list.d/webupd8team-java.list && \
-  echo "deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu xenial main" | tee -a /etc/apt/sources.list.d/webupd8team-java.list && \
-  echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections && \
-  apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys EEA14886 && \
-  apt-get update && \
-  apt-get install -y --no-install-recommends locales oracle-java8-installer oracle-java8-set-default unzip && \
-  apt-get clean && rm -rf /var/lib/apt/lists/* && rm -rf /var/cache/oracle-jdk8-installer
-
-## Set LOCALE to UTF8 # 
-RUN echo "en_US.UTF-8 UTF-8" > /etc/locale.gen && \
-    locale-gen en_US.UTF-8 && \
-    dpkg-reconfigure locales && \
-    /usr/sbin/update-locale LANG=en_US.UTF-8
-ENV LC_ALL en_US.UTF-8 
-
-## Timezone
-RUN echo "Asia/Seoul" > /etc/timezone && dpkg-reconfigure -f noninteractive tzdata
+RUN apk add --no-cache wget bash
 
 ## add yona user
-RUN useradd -m -d /yona -s /bin/bash -U yona && \
+RUN adduser -h /yona -D yona && \
     mkdir /yona/downloads
 
 ## install yona
 RUN cd /yona/downloads && \
-    wget --no-check-certificate $YONA_DOWNLOAD_URL && \
-    unzip -d /yona/release yona-v$YONA_VERSION-bin.zip && \
+    wget -q --no-check-certificate $YONA_DOWNLOAD_URL && \
+    mkdir /yona/release && \
+    unzip -q -d /yona/release yona-h2-v$YONA_VERSION-bin.zip && \
     mv /yona/release/yona-$YONA_VERSION /yona/release/yona && \
-    rm -f yona-v$YONA_VERSION-bin.zip
+    rm -f yona-h2-v$YONA_VERSION-bin.zip
 
 ## set environment variables
 ENV YONA_DATA "/yona/data"
